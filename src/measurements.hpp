@@ -10,23 +10,20 @@
 #include <iostream>
 #include <windows.h>
 
-#include <ios>
-#include <iomanip>
-
 
 #include "C:\Program Files (x86)\National Instruments 18\NI-DAQ\DAQmx ANSI C Dev\include\NIDAQmx.h" // include daqmx libraries
 
 #pragma comment(lib, "NIDAQmx.lib")
 
 using namespace std;
-#define CHANNEL_BUFFER_SIZE 5000000L
+#define CHANNEL_BUFFER_SIZE 500000L
 //#define SHUNT_GAIN 10.1112
 //#define VSUPPLY 12.0
 #define VSUPPLY 5.0 // troquei, era 3
 #define SHUNT_GAIN 10.1112
 
 /**--------SAMPLE RATE----------*/
-#define SAMPLE_RATE 48000
+#define SAMPLE_RATE 4800.0
 
 /** NUMBER_OF_PULSES_TO_FINISH**/
 #define CONTROL_VALUE 1
@@ -170,7 +167,6 @@ public:
 
 #define SINGLE_READ_TIMEOUT 5.0
 #define SINGLE_READ_BUFER_SIZE 1000L
-#define SINGLE_READ_BUFER_SIZE 70000L // junio
 // Calculate the address of the ith sample of the channel with index
 // chIdx in a buffer with nSamples samples and nCh channels.
 #define GET_SAMPLE(i,chIdx,nSamples) ( (((nSamples))*(chIdx))+(i) )
@@ -390,162 +386,101 @@ public:
     finishTasks();
   }
 
-  int count = 1; // junio
 
+  // measure all points
   char* acquireMeasurements(char* filename, int numer_of_measures = 1000){
     DAQmxResetDevice("Dev1");
-    // junio: trocando Dev3 por Dev1
-   
     char out[MAX_FILE_NAME_SIZE];
 
-    numer_of_measures = 24*32; // junio
-  
-
-    for(int i = 0; i<numer_of_measures ;i++) {
-    
+    for(int i = 0; i<numer_of_measures ;i++)
+    {
       float64 buffer[SINGLE_READ_BUFER_SIZE];
       double energy = 0.0;
       int32 samplesRead=1;
       bool started = false;
       bool firstSample = true;
       bool finished = false;
-      int currSample = 0;
+      int currSample;
 
-    // Config the timing
+      // Config the timing
       DAQmxErrChk(DAQmxCfgSampClkTiming(taskHandle,"",this->sampleRatePerChannel,
                 DAQmx_Val_Rising,DAQmx_Val_ContSamps,SINGLE_READ_BUFER_SIZE));
 
-    
       ofstream output;
-      //chooseName(filename,out);
-      string _filename = "measure_" + std::to_string(i+1) + ".txt"; // junio (no checking if file exist already)
-      output.open(_filename.c_str());
+      chooseName(filename,out);
+      output.open(out);
+
+      // used for properly closing file in case of control c interrupt
       GlobalFile = &output;
 
 
-     // Wait for trigger AQUI!!!
-      // junio commented, we do not wait for signals. 
-    /*  while(!started){
-    
-      DAQmxErrChk(DAQmxReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
-             buffer,SINGLE_READ_BUFER_SIZE/this->numberChannels,&samplesRead,NULL));
-      for(currSample= 0; currSample < samplesRead; currSample++){
-        // Check if control channel has been triggered
-     
-        if(firstSample){
-          ctlCh->setState(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]);
-          firstSample = false;
-      started = true;
-        }
+     // Wait for trigger
+      while(!started){
+      
+        DAQmxErrChk(DAQmxReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
+               buffer,SINGLE_READ_BUFER_SIZE/this->numberChannels,&samplesRead,NULL));
 
-        if( ctlCh->trigger(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]) == true ){
-          started = true;
-            cout << "Triggered" << endl;
+        for(currSample= 0; currSample < samplesRead; currSample++){
+          // Check if control channel has been triggered       
+          if(firstSample){
+            ctlCh->setState(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]);
+            firstSample = false;
+            started = true;
+          }
+
+          if( ctlCh->trigger(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]) == true ){
+            started = true;
+              cout << "Triggered" << endl;
+          }
         }
       }
-    }*/
 
-    cout<< "Start Acquiring Data" << endl;
+      cout<< "Start Acquiring Data" << endl;
 
-    cout << "Sample Rate: " << sampleRatePerChannel << endl;
-    cout << "Sample Read: " << samplesRead << endl;
+      cout << "Sample Rate: " << sampleRatePerChannel << endl;
+      cout << "Sample Read: " << samplesRead << endl;
+      
       // Sample channels 
-    long savedSample = 0;
-    int ret = 0;
-    currSample--;
-
-    //******** junio **************
-      int initiated = 0;
-      int sampled = 0;
-      string channel_activated = "";      
-
-
-    //***************************/
-    while(!finished){
-      // currSample reads loops through the number of samples taken for a single channel
-      // It is not set to 0 here because a trigger may have happened in the middle of a read
-      for(; currSample < samplesRead; currSample++){
-        int i=0;
-        for(ChannelListIt currCh = channels.begin(); currCh != channels.end(); currCh++,i++){
-          float64 float_sample = buffer[GET_SAMPLE(currSample,i,samplesRead)];
-          currCh->second->addSample(float_sample);
-          currCh->second->partial_total_time += (1/sampleRatePerChannel); //sum time
-
-          // junio
-          float64 watt = float_sample*VSUPPLY*SHUNT_GAIN;
-          if (initiated == 1 &&  watt < 1.0 &&  watt > -1.0 && sampled > 7000 && currCh->first == "canalHD") {
-            int _low = 0;
-            int _finished = 1;
-            for (int ii = currSample+1; ii < samplesRead; ii++) {
-              float64 check_sample = buffer[GET_SAMPLE(ii,i,samplesRead)];
-              float64 check_watt = check_sample*VSUPPLY*SHUNT_GAIN;
-              _low++;
-              if (check_watt > 1.0) {
-                _finished = 0;
-              }
-              //if(_low > 500) break;
+      long savedSample = 0;
+      int ret = 0;
+      currSample--;
+      while(!finished){
+        // currSample reads loops through the number of samples taken for a single channel
+        // It is not set to 0 here because a trigger may have happened in the middle of a read
+        for(; currSample < samplesRead; currSample++){
+          int i=0;
+          for(ChannelListIt currCh = channels.begin(); currCh != channels.end(); currCh++,i++){
+            currCh->second->addSample(buffer[GET_SAMPLE(currSample,i,samplesRead)]);
+            currCh->second->partial_total_time += (1/sampleRatePerChannel); //sum time
+            if (currCh == channels.begin()) 
+            {
+              energy += VSUPPLY*SHUNT_GAIN*buffer[currSample]/sampleRatePerChannel;
+              output << currCh->second->partial_total_time << "  " << VSUPPLY*SHUNT_GAIN*buffer[currSample] << endl;
             }
-            if (_finished == 1) {
-              cout << "\t>> Finished Measurement! " << endl << endl;
-              cout << "\t   >> " << watt  << " -- " << sampled << endl;
-              finished = true;
-              sampled = 0;
-              initiated = 0;            
-            }
-          }
+              
+          } 
 
-          if (watt > 1.0 && initiated == 0 && currCh->first == "canalHD" && finished == false && sampled > 10000) {
-            int _low = 0;
-            int _init = 1;
-            for (int ii = currSample+1; ii < samplesRead; ii++) {
-              float64 check_sample = buffer[GET_SAMPLE(ii,i,samplesRead)];
-              float64 check_watt = check_sample*VSUPPLY*SHUNT_GAIN;
-              _low++;
-              if (check_watt < 1.0) {
-                _init = 0;
-              }
-              //if(_low > 500) break;
-            }
+          savedSample++;
+          if( ctlCh->untrigger(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]) ){
+            finished = true;
+              cout << "Untriggered" << endl;
+            break;
+          }    
+        }
 
-            if(_init == 1) {
-              channel_activated = currCh->first;
-              cout << "\t>> Initiated Measurement on the Xu4 board on channel  " << channel_activated << " (" << count << ")"<< endl;
-              count++;
-              cout << "\t   >> " << watt << endl;
-              initiated = 1;
-              sampled = 0;            
-            }
-          }
-          
-          // junio ^^
+        DAQmxErrChk(DAQmxReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
+               buffer,SINGLE_READ_BUFER_SIZE,&samplesRead,NULL));
+        currSample = 0;
 
-          if (currCh == channels.begin())  {
-            energy += VSUPPLY*SHUNT_GAIN*buffer[currSample]/sampleRatePerChannel;
-            output << std::fixed << std::setprecision(10) << currCh->second->partial_total_time << "  " << VSUPPLY*SHUNT_GAIN*buffer[currSample] << endl;
-          }                    
-        } 
+        GlobalEnergy = energy;
+      } 
 
-        savedSample++;
-        sampled++; /// junio
-        /*if( ctlCh->untrigger(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]) ){
-          finished = true;
-          cout << "Untriggered" << endl;
-          break;
-        }*/ 
+      cout << i << ":  " << energy << endl;      
 
-      }
-
-      DAQmxErrChk(DAQmxReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
-             buffer,SINGLE_READ_BUFER_SIZE,&samplesRead,NULL));
-      currSample = 0;
-    } 
-
-    cout << i << ":  " << energy << endl;
-    GlobalEnergy = energy;
-
-    output.close();
+      output.close();
       finishTasks();
     }
+      
     return out;
   }
 
@@ -851,22 +786,23 @@ public:
 
   void startMeasure(int measurement_type ,  long numberOfSamples,  int result_view_mode, char* output_file_name = (char*)"output", std::string channel = "canalPrincipal")
   {
-    // junio
+    
+    // Handling control C interrupts. 
+    // Finish properly and report energy spent
     GlobalMeasurement = (void*)this;
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)controlC, TRUE)) {
       cout << "Error while handling control+c" << endl;
       return;
     }
-   
 
     char buff[100];
     switch(measurement_type)
     {
-    case(0): { acquireMeasurementsNoTrigger(output_file_name,numberOfSamples);  break;}
-    case(1): { acquireMeasurements(output_file_name, numberOfSamples); break; }
-    case(2): { strcpy(buff, acquireLastValueMeasured(output_file_name, numberOfSamples)); mean(buff);  break; }
-    case(3): { acquireTotalEnergyMeasured(output_file_name, numberOfSamples);  break; }
-  case(4): { strcpy(buff, acquireAutomatic(output_file_name, numberOfSamples)); mean(buff);  break; }
+      case(0): { acquireMeasurementsNoTrigger(output_file_name,numberOfSamples);  break;}
+      case(1): { acquireMeasurements(output_file_name, numberOfSamples); break; }
+      case(2): { strcpy(buff, acquireLastValueMeasured(output_file_name, numberOfSamples)); mean(buff);  break; }
+      case(3): { acquireTotalEnergyMeasured(output_file_name, numberOfSamples);  break; }
+      case(4): { strcpy(buff, acquireAutomatic(output_file_name, numberOfSamples)); mean(buff);  break; }
     }
   }
 

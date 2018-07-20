@@ -3,19 +3,6 @@
 #include <iostream>
 #include <fstream>
 
-//#define NO_TRIGGER 0
-//#define TRIGGERED_ALL_POINTS 1
-//#define TRIGGERED_LAST_VALUE 2
-//#define TRIGGERED_TOTAL_ENERGY 3
-//#define TRIGGERED_AUTOMATIC 4
-//
-//#define RESULT_VIEW_SCREEN 0
-//#define RESULT_VIEW_FILE 1
-
-
-/**--------SAMPLE RATE----------*/
-//#define SAMPLE_RATE 10.0
-
 
 int main(int argc, char* argv[]){
 
@@ -82,21 +69,20 @@ int main(int argc, char* argv[]){
 
     //currCh->second->partial_HD_energy += (VSUPPLY*SHUNT_GAIN*buffer[currSample]/sampleRatePerChannel); //sum energy
 
-      //initialize device
-      Measurement test("Dev1",SAMPLE_RATE,60);
-      test.addChannel("canalPrincipal","Dev1/ai0",1.0);
-      test.addChannel("canalTrigger","Dev1/ai1",10.0,1.0,false);
-      test.addChannel("canalHD","Dev1/ai2",1.0);
-      test.addChannel("canalnulo","Dev1/ai3",1.0);
+    //initialize device
+    Measurement test("Dev1",SAMPLE_RATE,60);
+    test.addChannel("canalPrincipal","Dev1/ai0",1.0);
+    test.addChannel("canalTrigger","Dev1/ai1",10.0,1.0,false);
+    test.addChannel("canalHD","Dev1/ai2",1.0);
+    test.addChannel("canalnulo","Dev1/ai3",1.0);
            
-      cout<<"Started"<<endl;
+    cout<<"Started"<<endl;
 
-      //start the measure
-
-	  //for(curr_code=0; curr_code<codes_running; curr_code++) 
-		  test.startMeasure(measurement_type ,numberOfSamples, result_view_mode, output_file_name, channel );
+    //start the measure
+	  
+		test.startMeasure(measurement_type ,numberOfSamples, result_view_mode, output_file_name, channel );
       
-      cout << "Finished";
+    cout << "Finished";
 
-      return 0;
+    return 0;
 }
