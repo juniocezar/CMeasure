@@ -48,5 +48,5 @@ par(mar=c(4,4,2,2))
 
 plot(db$time, db$power, pch="",
 	xlim=c(0, maxX), ylim=c(0, maxY),
-	xlab="Time (s)", ylab="Power (W)");
+	xlab="Time (s)", ylab="iPower (W)");
 lines(db$time, db$power);
