@@ -10,7 +10,7 @@
 #include <iostream>
 
 
-#include <NIDAQmx.h> // include daqmx libraries
+#include <C:\Program Files (x86)\National Instruments 18\Shared\ExternalCompilerSupport\C\include\NIDAQmx.h> // include daqmx libraries
 
 using namespace std;
 #define CHANNEL_BUFFER_SIZE 500000L
