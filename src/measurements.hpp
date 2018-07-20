@@ -16,14 +16,14 @@
 #pragma comment(lib, "NIDAQmx.lib")
 
 using namespace std;
-#define CHANNEL_BUFFER_SIZE 500000L
+#define CHANNEL_BUFFER_SIZE 5000000L
 //#define SHUNT_GAIN 10.1112
 //#define VSUPPLY 12.0
 #define VSUPPLY 5.0 // troquei, era 3
 #define SHUNT_GAIN 10.1112
 
 /**--------SAMPLE RATE----------*/
-#define SAMPLE_RATE 4800.0
+#define SAMPLE_RATE 48000
 
 /** NUMBER_OF_PULSES_TO_FINISH**/
 #define CONTROL_VALUE 1
@@ -166,7 +166,7 @@ public:
 };
 
 #define SINGLE_READ_TIMEOUT 5.0
-#define SINGLE_READ_BUFER_SIZE 1000L
+#define SINGLE_READ_BUFER_SIZE 70000L
 // Calculate the address of the ith sample of the channel with index
 // chIdx in a buffer with nSamples samples and nCh channels.
 #define GET_SAMPLE(i,chIdx,nSamples) ( (((nSamples))*(chIdx))+(i) )
