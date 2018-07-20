@@ -22,7 +22,7 @@ int main(int argc, char* argv[]){
   //default values
   int codes_running = 33;
   int curr_code = 0;
-  int measurement_type = TRIGGERED_LAST_VALUE;
+  int measurement_type = TRIGGERED_ALL_POINTS;
   long numberOfSamples = 33;
   int result_view_mode = RESULT_VIEW_FILE;
   char output_file_name[MAX_FILE_NAME_SIZE];
