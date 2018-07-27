@@ -25,3 +25,11 @@ out of the output produced by CMeasure.
 ![Sample 4](/docs/sample4.png)
 
 
+### Requirements 
+
+1. [NI-KAL 15.1](http://download.ni.com/support/softlib/kal/15.1/NIKAL151.iso)
+
+2. NI-DAQmx Base 15.0
+      -> Linux  : http://www.ni.com/download/ni-daqmx-base-15.0/5644/en/
+      -> MacOS  : http://www.ni.com/download/ni-daqmx-base-15.0/5648/en/
+      -> Windows: http://www.ni.com/download/ni-daqmx-base-15.0/5649/en/

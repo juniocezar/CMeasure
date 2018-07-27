@@ -1,14 +1,22 @@
-#include "stdafx.h"
 #include <assert.h>
 #include <cstdlib>     /* exit, EXIT_FAILURE */
 #include <stdio.h>
 #include <string>
+#include <string.h>
 #include <list>
 #include <map>
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include <windows.h>
+#include <NIDAQmxBase.h>
+
+#ifdef _WIN32
+  #include "stdafx.h" 
+  #include <windows.h>
+#elif __linux__
+  #include <signal.h>
+  #include <unistd.h>
+#endif
 
 
 //#include "C:\Program Files (x86)\National Instruments 18\NI-DAQ\DAQmx ANSI C Dev\include\NIDAQmx.h" // include daqmx libraries
@@ -39,6 +47,9 @@ using namespace std;
 #define RESULT_VIEW_SCREEN 0
 #define RESULT_VIEW_FILE 1
 
+
+
+
 void log(std::string msg) {
   std::cout << msg << std::endl;
 }
@@ -47,6 +58,33 @@ void log(std::string msg) {
 ofstream* GlobalFile;
 double GlobalEnergy;
 void* GlobalMeasurement;
+
+
+
+// handler for control C
+// todo: move outside class once spliting up this "header" file
+#ifdef _WIN32
+  static BOOL controlC(DWORD signal) {
+    if (signal == CTRL_C_EVENT) {
+      cout << "Finishing tasks" << endl;
+      GlobalFile->close();
+      cout << "Energy: " << GlobalEnergy << endl;
+      Measurement* gm = (Measurement*)GlobalMeasurement;
+      gm->finishTasks();
+      exit(EXIT_SUCCESS);
+    }
+    return FALSE;
+  }
+#elif __linux__
+  void controlC(int signal){    
+    cout << "Finishing tasks" << endl;
+    GlobalFile->close();
+    cout << "Energy: " << GlobalEnergy << endl;
+    //Measurement* gm = (Measurement*)GlobalMeasurement;
+    //gm->finishTasks();
+    exit(EXIT_SUCCESS);
+  }
+#endif
 
 class Channel  {
 protected:
@@ -99,7 +137,7 @@ public:
   void writeOutputFile(string fileName, float64 sampleRate){
     ofstream output;
 
-    output.open(fileName);
+    output.open(fileName.c_str());
 
     for(long i = 0; i != ptSample; i++){ 
       output << (ptSample*(1/sampleRate)) << "  " << samples[i] << endl; 
@@ -208,23 +246,11 @@ public:
       // DAQmx Stop Code
       /*********************************************/
       DAQmxBaseStopTask(taskHandle);
-      DAQmxBaseClearTask(&taskHandle);
+      DAQmxBaseClearTask(taskHandle);
 
     }
   }
 
-  // handler for control C - Windows
-  static BOOL controlC(DWORD signal) {
-    if (signal == CTRL_C_EVENT) {
-      cout << "Finishing tasks" << endl;
-      GlobalFile->close();
-      cout << "Energy: " << GlobalEnergy << endl;
-      Measurement* gm = (Measurement*)GlobalMeasurement;
-      gm->finishTasks();
-      exit(EXIT_SUCCESS);
-    }
-    return FALSE;
-  }
 
 
 
@@ -369,15 +395,24 @@ public:
   }
 
 
+
   void startMeasure(int measurement_type ,  long numberOfSamples,  int result_view_mode, char* output_file_name = (char*)"output", std::string channel = "canalPrincipal")
   {
     // Handling control C interrupts. 
     // Finish properly and report energy spent
     GlobalMeasurement = (void*)this;
-    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)controlC, TRUE)) {
-      std::cerr << "Error while handling control+c" << endl;
-      return;
-    }
+    #ifdef _WIN32
+      if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)controlC, TRUE)) {
+        std::cerr << "Error while handling control+c" << endl;
+        return;
+      }
+    #elif __linux__
+      struct sigaction sigIntHandler;
+      sigIntHandler.sa_handler = controlC;
+      sigemptyset(&sigIntHandler.sa_mask);
+      sigIntHandler.sa_flags = 0;
+      sigaction(SIGINT, &sigIntHandler, NULL);
+    #endif
 
     acquireMeasurements(output_file_name, numberOfSamples);
   }
@@ -397,7 +432,8 @@ public:
     FILE* in;
     char curr_filename[MAX_FILE_NAME_SIZE];
     strcpy(curr_filename,original_filename);
-    char buff[MAX_FILE_NAME_SIZE];
+    //char buff[MAX_FILE_NAME_SIZE];
+    string buff;
     char buff_opening[MAX_FILE_NAME_SIZE];
     for(int i =1;i<100;i++)
     {
@@ -409,8 +445,9 @@ public:
 
       strcpy(curr_filename,original_filename);
       
-      itoa(i,buff,10);
-      strcat(curr_filename,buff);
+      //itoa(i,buff,10);
+      buff = std::to_string(i);
+      strcat(curr_filename,buff.c_str());
       fclose(in);
     }
   }

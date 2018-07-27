@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "measurements.hpp"
 #include <iostream>
 #include <fstream>
