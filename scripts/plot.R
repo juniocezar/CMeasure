@@ -29,6 +29,7 @@ db <- db[seq(1, length(db$time), skipLen),];
 # dbs <- c(dbs, db);
 maxX <- max(c(maxX, db$time));
 maxY <- max(c(maxY, db$power));
+maxY <- 22
 
 # Set or query graphical parameters 
 numTests = 5 # eu fiz
@@ -43,7 +44,7 @@ db <- db[seq(1, length(db$time), skipLen),];
 # Plot graphs 
 # Get data from table 
 # Labels for each value (X, Y)
-pdf(pdfname, width=10, height=3)
+pdf(pdfname, width=20, height=6)
 par(mar=c(4,4,2,2))
 
 plot(db$time, db$power, pch="",

@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[]){
 
-  //default values
+  // default values
   int codes_running = 33;
   int curr_code = 0;
   int measurement_type = TRIGGERED_ALL_POINTS;
@@ -16,73 +16,33 @@ int main(int argc, char* argv[]){
   strcpy(output_file_name,"output");
   std::string channel = "canalPrincipal";
 
-
-    //analyse parameters
-    switch(argc)
-    {
+  // default mode being used is TRIGGERED_ALL_POINTS. So, the switch case
+  // was removed
+  
+  switch(argc) {
     //no parameter
     case(1): { break; }
-    
-    //type passed
-    case(2): 
-      {
-        if(strcmp(argv[1],"-AP") == 0){measurement_type = TRIGGERED_ALL_POINTS; break;}
-        else if(strcmp(argv[1],"-LV") == 0){measurement_type = TRIGGERED_LAST_VALUE; break;}
-        else if(strcmp(argv[1],"-NT") == 0){measurement_type = NO_TRIGGER; break;}
-        else if(strcmp(argv[1],"-TE") == 0){measurement_type = TRIGGERED_TOTAL_ENERGY; break;}
-		else if(strcmp(argv[1],"-AT") == 0){measurement_type = TRIGGERED_AUTOMATIC; break;}
-        else { printf("\nInvalid Paramenter\n Format: Measure.exe RunningType[-AP|-LV|-NT|-TE] [NumberofSamples] [output_filename]\n"); system("pause");  exit(1); }
-      }
-    case(3):
-      {
-        if(strcmp(argv[1],"-AP") == 0){measurement_type = TRIGGERED_ALL_POINTS; }
-        else if(strcmp(argv[1],"-LV") == 0){measurement_type = TRIGGERED_LAST_VALUE; }
-        else if(strcmp(argv[1],"-NT") == 0){measurement_type = NO_TRIGGER; }
-        else if(strcmp(argv[1],"-TE") == 0){measurement_type = TRIGGERED_TOTAL_ENERGY; }
-		else if(strcmp(argv[1],"-AT") == 0){measurement_type = TRIGGERED_AUTOMATIC; break;}
-        else { printf("\nInvalid Paramenter\n Format: Measure.exe RunningType[-AP|-LV|-NT|-TE] [NumberofSamples] [output_filename]\n"); system("pause");  exit(1); }
+  }
 
-        if(strcmp(argv[1],"-NT") == 0){numberOfSamples = atoi(argv[2]); break; }
-        else if(strcmp(argv[1],"-LV") == 0){numberOfSamples = atoi(argv[2]); break;}
-        else if(strcmp(argv[1],"-AT") == 0){numberOfSamples = atoi(argv[2]); break;}
-      }
+  
+  //initialize device
+  Measurement test("Dev1",SAMPLE_RATE,60);
+  test.addChannel("canalPrincipal","Dev1/ai0",1.0);
+  test.addChannel("canalTrigger","Dev1/ai1",10.0,1.0,false);
 
-    case(4):
-      {
-        if(strcmp(argv[1],"-AP") == 0){measurement_type = TRIGGERED_ALL_POINTS; }
-        else if(strcmp(argv[1],"-LV") == 0){measurement_type = TRIGGERED_LAST_VALUE; }
-        else if(strcmp(argv[1],"-NT") == 0){measurement_type = NO_TRIGGER; }
-        else if(strcmp(argv[1],"-TE") == 0){measurement_type = TRIGGERED_TOTAL_ENERGY; }
-		else if(strcmp(argv[1],"-AT") == 0){measurement_type = TRIGGERED_AUTOMATIC; break;}
-        else { printf("\nInvalid Paramenter\n Format: Measure.exe RunningType[-AP|-LV|-NT|-TE] [NumberofSamples] [output_filename]\n"); system("pause"); exit(1); }
+  // Mostly the only one being used, verify later so
+  // we can remove the other channels, increasing the final 
+  // sampling rate of this channel
+  test.addChannel("canalHD","Dev1/ai2",1.0);
 
-        if(strcmp(argv[1],"-NT") == 0){numberOfSamples = atoi(argv[2]); }
-        else if(strcmp(argv[1],"-LV") == 0){numberOfSamples = atoi(argv[2]); }
-        else if(strcmp(argv[1],"-AT") == 0){numberOfSamples = atoi(argv[2]); }
-
-        strcpy(output_file_name,argv[3]);
-      }
-
-
-    }
-
-
-    //currCh->second->partial_HD_energy += (VSUPPLY*SHUNT_GAIN*buffer[currSample]/sampleRatePerChannel); //sum energy
-
-    //initialize device
-    Measurement test("Dev1",SAMPLE_RATE,60);
-    test.addChannel("canalPrincipal","Dev1/ai0",1.0);
-    test.addChannel("canalTrigger","Dev1/ai1",10.0,1.0,false);
-    test.addChannel("canalHD","Dev1/ai2",1.0);
-    test.addChannel("canalnulo","Dev1/ai3",1.0);
+  test.addChannel("canalnulo","Dev1/ai3",1.0);
            
-    cout<<"Started"<<endl;
+  log("CMeasure Initiated! The output data will be written to the file: output.txt");
 
-    //start the measure
-	  
-		test.startMeasure(measurement_type ,numberOfSamples, result_view_mode, output_file_name, channel );
+  // start the measure    
+  test.startMeasure(measurement_type ,numberOfSamples, result_view_mode, output_file_name, channel );
       
-    cout << "Finished";
+  log("Finished.");
 
-    return 0;
+  return 0;
 }
