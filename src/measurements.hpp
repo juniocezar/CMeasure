@@ -213,7 +213,7 @@ public:
     }
   }
 
-  // junio
+  // handler for control C - Windows
   static BOOL controlC(DWORD signal) {
     if (signal == CTRL_C_EVENT) {
       cout << "Finishing tasks" << endl;
@@ -388,38 +388,6 @@ public:
 
   void writeLastValue(char* filename, string channel){
     channels[channel]->writeLastValue(filename);
-  }
-
-
-  int mean(char* filename)
-  {
-    
-  FILE* input;
-  input = fopen(filename,"r+");
-  if( input == NULL ) { cout<< "File not found"<<endl; system("pause"); return(EXIT_FAILURE); }
-  
-  float sum_energy = 0.0;
-  float sum_time = 0.0;
-  float mean_energy = 0.0;
-  float mean_time = 0.0;
-  int iter = 0;
-  int i = 0;
-  while(!feof(input))
-  {
-    fscanf(input,"%f",&sum_time);
-    fscanf(input,"%f",&sum_energy);
-
-    mean_energy += sum_energy;
-    mean_time += sum_time;
-
-    i++;
-  }
-
-  mean_energy /= i;
-  mean_time /= i;
-
-  fprintf(input,"\n\nTempo Medio: %f  -- Energia Media:  %f", mean_time, mean_energy);
-  fclose(input);
   }
 
 
