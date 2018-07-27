@@ -11,9 +11,9 @@
 #include <windows.h>
 
 
-#include "C:\Program Files (x86)\National Instruments 18\NI-DAQ\DAQmx ANSI C Dev\include\NIDAQmx.h" // include daqmx libraries
+//#include "C:\Program Files (x86)\National Instruments 18\NI-DAQ\DAQmx ANSI C Dev\include\NIDAQmx.h" // include daqmx libraries
 
-#pragma comment(lib, "NIDAQmx.lib")
+//#pragma comment(lib, "NIDAQmx.lib")
 
 using namespace std;
 #define CHANNEL_BUFFER_SIZE 5000000L
@@ -193,7 +193,7 @@ public:
 
     if (DAQmxFailed(error)) {
       finishTasks();
-      DAQmxGetExtendedErrorInfo(errBuff, 2048);
+      DAQmxBaseGetExtendedErrorInfo(errBuff, 2048);
       cout << "DAQmx Error: " << errBuff << endl;;
       cout << "End of program, press Enter key to quit" << endl;
       getchar();
@@ -207,8 +207,8 @@ public:
       /*********************************************/
       // DAQmx Stop Code
       /*********************************************/
-      DAQmxStopTask(taskHandle);
-      DAQmxClearTask(&taskHandle);
+      DAQmxBaseStopTask(taskHandle);
+      DAQmxBaseClearTask(&taskHandle);
 
     }
   }
@@ -234,8 +234,8 @@ public:
     this->timeout_s = timeout_s;
     this->numberChannels = 0;
     this->partial_sum = 0.0;
-    DAQmxErrChk(DAQmxResetDevice(deviceName.c_str()));
-    DAQmxErrChk(DAQmxCreateTask("",&taskHandle));
+    DAQmxErrChk(DAQmxBaseResetDevice(deviceName.c_str()));
+    DAQmxErrChk(DAQmxBaseCreateTask("",&taskHandle));
 
   }
 
@@ -251,7 +251,7 @@ public:
     this->channels[name] = new Channel(name, id, maxVoltage);
     this->numberChannels++;
     // Init the DAQmx Channel
-    DAQmxErrChk(DAQmxCreateAIVoltageChan(taskHandle,id.c_str(),name.c_str(),DAQmx_Val_Diff,
+    DAQmxErrChk(DAQmxBaseCreateAIVoltageChan(taskHandle,id.c_str(),name.c_str(),DAQmx_Val_Diff,
             -maxVoltage,maxVoltage,DAQmx_Val_Volts,NULL));
     this->sampleRatePerChannel = SAMPLE_RATE/numberChannels;
 
@@ -264,7 +264,7 @@ public:
     ctlIndex = numberChannels;
     this->numberChannels++;
     // Init the DAQmx Channel
-    DAQmxErrChk(DAQmxCreateAIVoltageChan(taskHandle,id.c_str(),name.c_str(),DAQmx_Val_Diff,
+    DAQmxErrChk(DAQmxBaseCreateAIVoltageChan(taskHandle,id.c_str(),name.c_str(),DAQmx_Val_Diff,
             -maxVoltage,maxVoltage,DAQmx_Val_Volts,NULL));
 
   };
@@ -273,7 +273,7 @@ public:
 
   // measure all points
   char* acquireMeasurements(char* filename, int numer_of_measures = 1000){
-    DAQmxResetDevice("Dev1");
+    DAQmxBaseResetDevice("Dev1");
     char out[MAX_FILE_NAME_SIZE];
 
     for(int i = 0; i<numer_of_measures ;i++)
@@ -287,7 +287,7 @@ public:
       int currSample;
 
       // Config the timing
-      DAQmxErrChk(DAQmxCfgSampClkTiming(taskHandle,"",this->sampleRatePerChannel,
+      DAQmxErrChk(DAQmxBaseCfgSampClkTiming(taskHandle,"",this->sampleRatePerChannel,
                 DAQmx_Val_Rising,DAQmx_Val_ContSamps,SINGLE_READ_BUFER_SIZE));
 
       ofstream output;
@@ -301,7 +301,7 @@ public:
      // Wait for trigger
       while(!started){
       
-        DAQmxErrChk(DAQmxReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
+        DAQmxErrChk(DAQmxBaseReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
                buffer,SINGLE_READ_BUFER_SIZE/this->numberChannels,&samplesRead,NULL));
 
         for(currSample= 0; currSample < samplesRead; currSample++){
@@ -352,7 +352,7 @@ public:
           }    
         }
 
-        DAQmxErrChk(DAQmxReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
+        DAQmxErrChk(DAQmxBaseReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
                buffer,SINGLE_READ_BUFER_SIZE,&samplesRead,NULL));
         currSample = 0;
 
