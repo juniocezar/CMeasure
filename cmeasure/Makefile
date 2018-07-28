@@ -52,7 +52,7 @@ windows:
 
 clean:
 	rm bin/* obj/*
-	delete bin\* obj\*
+	del bin\* obj\*
 
 
 
