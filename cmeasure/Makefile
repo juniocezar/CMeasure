@@ -39,11 +39,13 @@ all:
 
 
 linux:
+	mkdir -p bin obj
 	g++ -std=c++11 -I$(NIINCLUDE) -c measurements.cpp -o obj/measurements.o
 	g++ -std=c++11  obj/measurements.o  -L$(NILIBPATH) -l$(NILIBNAME) -o bin/measurements.exe
 
 
 windows:
+	mkdir -p bin obj
 	cl $(WIN_CL_FLAGS) src\stdafx.cpp /Foobj\stdafx.obj
 	cl $(WIN_CL_FLAGS) src\measurements.cpp /Foobj\measurements.obj
 	cl $(WIN_CL_FLAGS) src\cmeasure.cpp /Foobj\cmeasure.obj
