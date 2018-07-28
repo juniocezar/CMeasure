@@ -1,28 +1,19 @@
 #include "../include/measurements.hpp"
 
-ofstream* GlobalFile;
-double GlobalEnergy;
-void* GlobalMeasurement;
 bool crtl_c_pressed = false;
-
 
 void log(std::string msg) {
   std::cout << msg << std::endl;
 }
 
 // handler for control C - Windows
-  static BOOL controlC(DWORD signal) {
-    if (signal == CTRL_C_EVENT) {      
-      crtl_c_pressed = true;
-      cout << "Finishing tasks" << endl;
-      GlobalFile->close();
-      cout << "Energy: " << GlobalEnergy << endl;
-      Measurement* gm = (Measurement*)GlobalMeasurement;
-      gm->finishTasks(true);
-      exit(EXIT_SUCCESS);
-    }
-    return FALSE;
+static BOOL controlC(DWORD signal) {
+  if (signal == CTRL_C_EVENT) {      
+    crtl_c_pressed = true;
+    return TRUE;
   }
+  return FALSE;
+}
 
 
 Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANNEL_BUFFER_SIZE) {
@@ -140,13 +131,6 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
 
   void Measurement::finishTasks(bool event_handler) {
     if (taskHandle != 0) {
-
-      // really necessary?
-      // blocks a second call to finishTasks to succeed if
-      // control c was already pressed.
-      if (crtl_c_pressed && !event_handler)
-        return;
-
       /*********************************************/
       // DAQmx Stop Code
       /*********************************************/
@@ -224,10 +208,6 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
       chooseName(filename,out);
       output.open(out);
 
-      // used for properly closing file in case of control c interrupt
-      GlobalFile = &output;
-
-
       DAQmxErrChk (DAQmxBaseStartTask(taskHandle));
      // Wait for trigger
       while(!started){
@@ -277,9 +257,9 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
           } 
 
           savedSample++;
-          if( ctlCh->untrigger(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]) ){
+          if( ctlCh->untrigger(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]) || crtl_c_pressed ){
             finished = true;
-              cout << "Untriggered" << endl;
+            cout << "Untriggered" << endl;
             break;
           }    
         }
@@ -288,13 +268,16 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
                buffer,SINGLE_READ_BUFER_SIZE,&samplesRead,NULL));
         currSample = 0;
 
-        GlobalEnergy = energy;
       } 
 
-      cout << i << ":  " << energy << endl;      
+      //cout << i << ":  " << energy << endl;      
+      cout << "\nEnergy :  " << energy << endl;      
 
       output.close();
       finishTasks();
+
+      if (crtl_c_pressed)
+        break;
     }
 
     // bug: its a local variable, why returning it?
@@ -306,7 +289,6 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
   {
     // Handling control C interrupts. 
     // Finish properly and report energy spent
-    GlobalMeasurement = (void*)this;
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)controlC, TRUE)) {
       std::cerr << "Error while handling control+c" << endl;
       return;

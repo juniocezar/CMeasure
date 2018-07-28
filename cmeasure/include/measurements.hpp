@@ -43,10 +43,7 @@ void log(std::string msg);
 // handler for control C - Windows
 static BOOL controlC(DWORD signal);
 
-extern ofstream* GlobalFile;
-extern double GlobalEnergy;
-extern void* GlobalMeasurement;
-extern bool crtl_c_pressed;
+extern bool crtl_c_pressed; // defaults to false
 
 
 class Channel  {
