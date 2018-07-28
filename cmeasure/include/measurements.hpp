@@ -46,6 +46,7 @@ static BOOL controlC(DWORD signal);
 extern ofstream* GlobalFile;
 extern double GlobalEnergy;
 extern void* GlobalMeasurement;
+extern bool crtl_c_pressed;
 
 
 class Channel  {
@@ -115,7 +116,7 @@ public:
 
   void DAQmxErrChk(int32 error);
 
-  void finishTasks();
+  void finishTasks(bool event_handler = false);
 
 public:
   Measurement(string deviceName, float64 sampleRatePerChannel, int timeout_s);

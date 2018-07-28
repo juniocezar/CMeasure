@@ -3,6 +3,7 @@
 ofstream* GlobalFile;
 double GlobalEnergy;
 void* GlobalMeasurement;
+bool crtl_c_pressed = false;
 
 
 void log(std::string msg) {
@@ -11,12 +12,13 @@ void log(std::string msg) {
 
 // handler for control C - Windows
   static BOOL controlC(DWORD signal) {
-    if (signal == CTRL_C_EVENT) {
+    if (signal == CTRL_C_EVENT) {      
+      crtl_c_pressed = true;
       cout << "Finishing tasks" << endl;
       GlobalFile->close();
       cout << "Energy: " << GlobalEnergy << endl;
       Measurement* gm = (Measurement*)GlobalMeasurement;
-      gm->finishTasks();
+      gm->finishTasks(true);
       exit(EXIT_SUCCESS);
     }
     return FALSE;
@@ -121,8 +123,10 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
   void Measurement::DAQmxErrChk(int32 error) {
     char        errBuff[4096] = { '\0' };
 
+    if (crtl_c_pressed)
+      return;
+
     if (DAQmxFailed(error)) {
-      cout << error << endl;
       finishTasks();
       DAQmxBaseGetExtendedErrorInfo(errBuff, 2048);
       cout << "DAQmx Error: " << errBuff << endl;;
@@ -134,14 +138,20 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
 
   }
 
-  void Measurement::finishTasks() {
+  void Measurement::finishTasks(bool event_handler) {
     if (taskHandle != 0) {
+
+      // really necessary?
+      // blocks a second call to finishTasks to succeed if
+      // control c was already pressed.
+      if (crtl_c_pressed && !event_handler)
+        return;
+
       /*********************************************/
       // DAQmx Stop Code
       /*********************************************/
       DAQmxBaseStopTask(taskHandle);
       DAQmxBaseClearTask(taskHandle);
-
     }
   }
 

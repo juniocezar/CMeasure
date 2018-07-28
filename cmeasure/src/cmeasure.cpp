@@ -18,12 +18,6 @@ int main(int argc, char* argv[]){
   // default mode being used is TRIGGERED_ALL_POINTS. So, the switch case
   // was removed
   
-  switch(argc) {
-    //no parameter
-    case(1): { break; }
-  }
-
-  
   //initialize device
   Measurement test("Dev1",SAMPLE_RATE,60);
   test.addChannel("canalPrincipal","Dev1/ai0",1.0);
@@ -37,6 +31,7 @@ int main(int argc, char* argv[]){
   test.addChannel("canalnulo","Dev1/ai3",1.0);
            
   log("CMeasure Initiated! The output data will be written to the file: output.txt");
+  log("Press CRTL+C to stop collecting samples.\n\n");
 
   // start the measure    
   test.startMeasure(measurement_type ,numberOfSamples, result_view_mode, output_file_name, channel );
