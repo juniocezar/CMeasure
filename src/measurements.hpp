@@ -1,37 +1,24 @@
+#include "stdafx.h"
 #include <assert.h>
 #include <cstdlib>     /* exit, EXIT_FAILURE */
 #include <stdio.h>
 #include <string>
-#include <string.h>
 #include <list>
 #include <map>
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include <NIDAQmxBase.h>
+#include <windows.h>
 
-#ifdef _WIN32
-  #include "stdafx.h" 
-  #include <windows.h>
-#elif __linux__
-  #include <signal.h>
-  #include <unistd.h>
-#endif
-
-
-//#include "C:\Program Files (x86)\National Instruments 18\NI-DAQ\DAQmx ANSI C Dev\include\NIDAQmx.h" // include daqmx libraries
-
-//#pragma comment(lib, "NIDAQmx.lib")
+#include "C:\Program Files (x86)\National Instruments 20\NI-DAQmx Base\Include\NIDAQmxBase.h"
 
 using namespace std;
 #define CHANNEL_BUFFER_SIZE 5000000L
-//#define SHUNT_GAIN 10.1112
-//#define VSUPPLY 12.0
-#define VSUPPLY 5.0 // troquei, era 3
+#define VSUPPLY 5.0
 #define SHUNT_GAIN 10.1112
 
 /**--------SAMPLE RATE----------*/
-#define SAMPLE_RATE 48000
+#define SAMPLE_RATE 4800 // reduzido temporariamente devido a buffer overflow
 
 /** NUMBER_OF_PULSES_TO_FINISH**/
 #define CONTROL_VALUE 1
@@ -47,9 +34,6 @@ using namespace std;
 #define RESULT_VIEW_SCREEN 0
 #define RESULT_VIEW_FILE 1
 
-
-
-
 void log(std::string msg) {
   std::cout << msg << std::endl;
 }
@@ -58,33 +42,6 @@ void log(std::string msg) {
 ofstream* GlobalFile;
 double GlobalEnergy;
 void* GlobalMeasurement;
-
-
-
-// handler for control C
-// todo: move outside class once spliting up this "header" file
-#ifdef _WIN32
-  static BOOL controlC(DWORD signal) {
-    if (signal == CTRL_C_EVENT) {
-      cout << "Finishing tasks" << endl;
-      GlobalFile->close();
-      cout << "Energy: " << GlobalEnergy << endl;
-      Measurement* gm = (Measurement*)GlobalMeasurement;
-      gm->finishTasks();
-      exit(EXIT_SUCCESS);
-    }
-    return FALSE;
-  }
-#elif __linux__
-  void controlC(int signal){    
-    cout << "Finishing tasks" << endl;
-    GlobalFile->close();
-    cout << "Energy: " << GlobalEnergy << endl;
-    //Measurement* gm = (Measurement*)GlobalMeasurement;
-    //gm->finishTasks();
-    exit(EXIT_SUCCESS);
-  }
-#endif
 
 class Channel  {
 protected:
@@ -137,7 +94,7 @@ public:
   void writeOutputFile(string fileName, float64 sampleRate){
     ofstream output;
 
-    output.open(fileName.c_str());
+    output.open(fileName);
 
     for(long i = 0; i != ptSample; i++){ 
       output << (ptSample*(1/sampleRate)) << "  " << samples[i] << endl; 
@@ -230,6 +187,7 @@ public:
     char        errBuff[4096] = { '\0' };
 
     if (DAQmxFailed(error)) {
+      cout << error << endl;
       finishTasks();
       DAQmxBaseGetExtendedErrorInfo(errBuff, 2048);
       cout << "DAQmx Error: " << errBuff << endl;;
@@ -238,6 +196,7 @@ public:
 
       exit(EXIT_FAILURE);
     }
+
   }
 
   void finishTasks() {
@@ -251,6 +210,18 @@ public:
     }
   }
 
+  // handler for control C - Windows
+  static BOOL controlC(DWORD signal) {
+    if (signal == CTRL_C_EVENT) {
+      cout << "Finishing tasks" << endl;
+      GlobalFile->close();
+      cout << "Energy: " << GlobalEnergy << endl;
+      Measurement* gm = (Measurement*)GlobalMeasurement;
+      gm->finishTasks();
+      exit(EXIT_SUCCESS);
+    }
+    return FALSE;
+  }
 
 
 
@@ -283,9 +254,10 @@ public:
 
   }
 
-  void addChannel(string name, string id, float64 maxVoltage, float64 startLevel, bool edge){
-    assert(ctlCh != NULL);
+  void addChannel(string name, string id, float64 maxVoltage, float64 startLevel, bool edge){    
     ctlCh = new ControlChannel(name,id,maxVoltage, startLevel,edge);
+    assert(ctlCh != NULL);
+
     this->channels[name] = ctlCh;
     ctlIndex = numberChannels;
     this->numberChannels++;
@@ -324,9 +296,9 @@ public:
       GlobalFile = &output;
 
 
+      DAQmxErrChk (DAQmxBaseStartTask(taskHandle));
      // Wait for trigger
       while(!started){
-      
         DAQmxErrChk(DAQmxBaseReadAnalogF64(taskHandle,-1,SINGLE_READ_TIMEOUT,DAQmx_Val_GroupByChannel,
                buffer,SINGLE_READ_BUFER_SIZE/this->numberChannels,&samplesRead,NULL));
 
@@ -335,14 +307,16 @@ public:
           if(firstSample){
             ctlCh->setState(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]);
             firstSample = false;
-            started = true;
-          }
+            started = true;            
+          }          
 
           if( ctlCh->trigger(buffer[GET_SAMPLE(currSample,ctlIndex,samplesRead)]) == true ){
             started = true;
               cout << "Triggered" << endl;
           }
         }
+
+        break;
       }
 
       cout<< "Start Acquiring Data" << endl;
@@ -395,24 +369,15 @@ public:
   }
 
 
-
   void startMeasure(int measurement_type ,  long numberOfSamples,  int result_view_mode, char* output_file_name = (char*)"output", std::string channel = "canalPrincipal")
   {
     // Handling control C interrupts. 
     // Finish properly and report energy spent
     GlobalMeasurement = (void*)this;
-    #ifdef _WIN32
-      if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)controlC, TRUE)) {
-        std::cerr << "Error while handling control+c" << endl;
-        return;
-      }
-    #elif __linux__
-      struct sigaction sigIntHandler;
-      sigIntHandler.sa_handler = controlC;
-      sigemptyset(&sigIntHandler.sa_mask);
-      sigIntHandler.sa_flags = 0;
-      sigaction(SIGINT, &sigIntHandler, NULL);
-    #endif
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)controlC, TRUE)) {
+      std::cerr << "Error while handling control+c" << endl;
+      return;
+    }
 
     acquireMeasurements(output_file_name, numberOfSamples);
   }
@@ -432,8 +397,7 @@ public:
     FILE* in;
     char curr_filename[MAX_FILE_NAME_SIZE];
     strcpy(curr_filename,original_filename);
-    //char buff[MAX_FILE_NAME_SIZE];
-    string buff;
+    char buff[MAX_FILE_NAME_SIZE];
     char buff_opening[MAX_FILE_NAME_SIZE];
     for(int i =1;i<100;i++)
     {
@@ -445,15 +409,10 @@ public:
 
       strcpy(curr_filename,original_filename);
       
-      //itoa(i,buff,10);
-      buff = std::to_string(i);
-      strcat(curr_filename,buff.c_str());
+      itoa(i,buff,10);
+      strcat(curr_filename,buff);
       fclose(in);
     }
   }
-
-
-
-
 
 };
