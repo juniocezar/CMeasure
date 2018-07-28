@@ -6,14 +6,22 @@ void log(std::string msg) {
   std::cout << msg << std::endl;
 }
 
-// handler for control C - Windows
-static BOOL controlC(DWORD signal) {
-  if (signal == CTRL_C_EVENT) {      
-    crtl_c_pressed = true;
-    return TRUE;
+// handler for control C - Windows / Linux
+#ifdef _WIN32
+  static BOOL controlC(DWORD signal) {
+    if (signal == CTRL_C_EVENT) {      
+      crtl_c_pressed = true;
+      return TRUE;
+    }
+    return FALSE;
   }
-  return FALSE;
-}
+#elif __linux__
+  void controlC(int signal){    
+    crtl_c_pressed = true;
+  }
+#endif
+
+
 
 
 Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANNEL_BUFFER_SIZE) {
@@ -289,10 +297,19 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
   {
     // Handling control C interrupts. 
     // Finish properly and report energy spent
-    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)controlC, TRUE)) {
-      std::cerr << "Error while handling control+c" << endl;
-      return;
-    }
+
+    #ifdef _WIN32
+      if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)controlC, TRUE)) {
+        std::cerr << "Error while handling control+c" << endl;
+        return;
+      }
+    #elif __linux__
+      struct sigaction sigIntHandler;
+      sigIntHandler.sa_handler = controlC;
+      sigemptyset(&sigIntHandler.sa_mask);
+      sigIntHandler.sa_flags = 0;
+      sigaction(SIGINT, &sigIntHandler, NULL);
+    #endif
 
     acquireMeasurements(output_file_name, numberOfSamples);
   }
@@ -324,8 +341,10 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
 
       strcpy(curr_filename,original_filename);
       
-      itoa(i,buff,10);
-      strcat(curr_filename,buff);
+      //itoa(i,buff,10);
+      string buff = std::to_string(i);
+      strcat(curr_filename,buff.c_str());
+      
       fclose(in);
     }
   }

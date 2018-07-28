@@ -40,8 +40,9 @@ all:
 
 linux:
 	mkdir -p bin obj
-	g++ -std=c++11 -I$(NIINCLUDE) -c measurements.cpp -o obj/measurements.o
-	g++ -std=c++11  obj/measurements.o  -L$(NILIBPATH) -l$(NILIBNAME) -o bin/measurements.exe
+	g++ -std=c++11 -I$(NIINCLUDE) -c src/measurements.cpp -o obj/measurements.o
+	g++ -std=c++11 -I$(NIINCLUDE) -c src/cmeasure.cpp -o obj/cmeasure.o
+	g++ -std=c++11  obj/cmeasure.o obj/measurements.o -L$(NILIBPATH) -l$(NILIBNAME) -o bin/cmeasure.exe
 
 
 windows:

@@ -1,19 +1,26 @@
 #ifndef MEASUREMENTS_HPP
 #define MEASUREMENTS_HPP
 
-#include "stdafx.h"
 #include <assert.h>
 #include <cstdlib>     /* exit, EXIT_FAILURE */
 #include <stdio.h>
 #include <string>
+#include <string.h>
 #include <list>
 #include <map>
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include <windows.h>
+#include <NIDAQmxBase.h>
 
-#include "C:\Program Files (x86)\National Instruments 20\NI-DAQmx Base\Include\NIDAQmxBase.h"
+#ifdef _WIN32
+  #include "stdafx.h" 
+  #include <windows.h>
+#elif __linux__
+  #include <signal.h>
+  #include <unistd.h>
+#endif
+
 
 using namespace std;
 #define CHANNEL_BUFFER_SIZE 5000000L
@@ -40,8 +47,13 @@ using namespace std;
 void log(std::string msg);
 
 
-// handler for control C - Windows
-static BOOL controlC(DWORD signal);
+// handler for control C - Windows/Linux
+#ifdef _WIN32
+  static BOOL controlC(DWORD signal);  
+#elif __linux__
+  void controlC(int signal);
+#endif
+
 
 extern bool crtl_c_pressed; // defaults to false
 
