@@ -31,7 +31,7 @@ out of the output produced by CMeasure.
 
 #### Microsoft Windows
  
- * Tested on Windows 10 x64- previous version of the code (using DAQmx driver worked on Windows 7 and 8 as well, so the current code might work as well) -
+ * Tested on Windows 10 x64 - previous version of the code, which used the DAQmx driver, worked on Windows 7 and 8 as well, so the current code probably will work as well) -
 
   1. NI-DAQmx Base 15.0 
      Windows: http://www.ni.com/download/ni-daqmx-base-15.0/5649/en/ 
@@ -40,7 +40,7 @@ out of the output produced by CMeasure.
  
  *  Tested on [openSUSE 13.1 (32bits)](https://ftp5.gwdg.de/pub/opensuse/discontinued/distribution/13.1/iso/openSUSE-13.1-DVD-i586.iso) - linux kernel 3.12.67-64.1-noarch - 
 
-  1. Linux kernel headers for kernel being used. 
+  1. Sources for the Linux kernel being used. 
        May be downlodade with (openSUSE) : sudo zypper install kernel-source-3.12.67-64.1.noarch   
 
   2. [NI-KAL 15.1](http://download.ni.com/support/softlib/kal/15.1/NIKAL151.iso)   
@@ -66,13 +66,11 @@ out of the output produced by CMeasure.
 
 
 #### Microsoft Windows
-Remove any previous version of National Instrument software. Then, you just need to download the NI-DAQmx Base driver,
-install it using the wizard and reboot the OS. After that, the device should recognized by the system. You can check
-it by starting the NI software "list devices", which should list the "USB-6009" DAQ device. 
+Remove any previous version of the National Instrument DAQmx/DAQmx-base drivers, then you just need to download the NI-DAQmx Base driver, install it using the wizard and reboot the OS. After that, the device should be recognized by the system. You can check it by starting the NI software "list devices", which should list the "USB-6009" DAQ device. 
 
 #### Linux (openSUSE 13.1 32bits)
 It is quite complicated to make NI drivers work properly under linux. They support some very few rpm based distros, like
-Red Hat, CentOS (tried but I couldn't make the driver work) and openSUSE 32 Bits. Also there is an issue with the 64bit 
+Red Hat, CentOS (tried but I couldn't make the driver work) and openSUSE 32 Bits. Also, there is an issue with the 64bit 
 archtectures, which I won't discuss here.
 
 Guide:
@@ -101,18 +99,22 @@ Guide:
 4. Download and install NI-KAL 15.1
    You just need to download the iso, extract it and run the script: ./INSTALL as root
    then reboot
+   
+5. Update NI drivers:
+   ```bash   
+   sudo /usr/local/bin/updateNIDrivers     
+   ```
 
-
-5. Download and install NI-VISA 15.5
+6. Download and install NI-VISA 15.5
    You just need to download the iso, extract it and run the script: ./INSTALL as root
    then reboot
 
 
-6. Download and install NI-DAQmx Base 15.0
+7. Download and install NI-DAQmx Base 15.0
    You just need to download the iso, extract it and run the script: ./INSTALL as root
    then reboot
 
-7. Run lsdaq and see if it lists the USB 6009 usb device
+8. Run lsdaq and see if it lists the USB 6009 usb device
 
 
 
