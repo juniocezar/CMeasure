@@ -210,7 +210,7 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
       bool firstSample = true;
       bool finished = false;
       int currSample;
-      uint totalSamplesWritten = 0, finalTime = 0;
+      long totalSamplesWritten = 0, finalTime = 0;
 
       // Config the timing
       DAQmxErrChk(DAQmxBaseCfgSampClkTiming(taskHandle,"",this->sampleRatePerChannel,
