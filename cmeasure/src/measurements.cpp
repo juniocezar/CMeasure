@@ -126,10 +126,10 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
     if (crtl_c_pressed)
       return;
 
-    if (DAQmxFailed(error)) {
-      finishTasks();
+    if (DAQmxFailed(error)) {      
       DAQmxBaseGetExtendedErrorInfo(errBuff, 2048);
-      cout << "DAQmx Error: " << errBuff << endl;;
+      finishTasks();
+      cout << "DAQmx Error (" <<  error << "): " << errBuff << endl;;
       cout << "End of program, press Enter key to quit" << endl;
       getchar();
 
@@ -210,6 +210,7 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
       bool firstSample = true;
       bool finished = false;
       int currSample;
+      uint totalSamplesWritten = 0, finalTime = 0;
 
       // Config the timing
       DAQmxErrChk(DAQmxBaseCfgSampClkTiming(taskHandle,"",this->sampleRatePerChannel,
@@ -263,6 +264,8 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
             {
               energy += VSUPPLY*SHUNT_GAIN*buffer[currSample]/sampleRatePerChannel;
               output << currCh->second->partial_total_time << "  " << VSUPPLY*SHUNT_GAIN*buffer[currSample] << endl;
+              totalSamplesWritten++;
+              finalTime = currCh->second->partial_total_time;
             }
               
           } 
@@ -282,7 +285,9 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
       } 
 
       //cout << i << ":  " << energy << endl;      
-      cout << "\nEnergy :  " << energy << endl;      
+      cout << "\nEnergy :  " << energy << endl;  
+      cout << "\t> Collected at: " << finalTime;
+      cout << "s out of: " << totalSamplesWritten << " samples.\n";
 
       output.close();
       finishTasks();
@@ -347,7 +352,7 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
       //itoa(i,buff,10);
       string buff = std::to_string(i);
       strcat(curr_filename,buff.c_str());
-      
+
       fclose(in);
     }
   }

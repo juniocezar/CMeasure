@@ -28,7 +28,7 @@ using namespace std;
 #define SHUNT_GAIN 10.1112
 
 /**--------SAMPLE RATE----------*/
-#define SAMPLE_RATE 4800 // reduzido temporariamente devido a buffer overflow
+#define SAMPLE_RATE 480 // reduzido temporariamente devido a buffer overflow
 
 /** NUMBER_OF_PULSES_TO_FINISH**/
 #define CONTROL_VALUE 1
