@@ -137,16 +137,16 @@ public:
   void addChannel(string name, string id, float64 maxVoltage, float64 startLevel, bool edge);
 
   // measure all points
-  char* acquireMeasurements(char* filename, int numer_of_measures = 1000);
+  char* acquireMeasurements(const char* filename, int numer_of_measures = 1000);
 
 
-  void startMeasure(int measurement_type ,  long numberOfSamples,  int result_view_mode, char* output_file_name = (char*)"output", std::string channel = "canalPrincipal");
+  void startMeasure(int measurement_type ,  long numberOfSamples,  int result_view_mode, const char* output_file_name = (const char*)"output", std::string channel = "canalPrincipal");
 
   void writeOutputFile(char* filename, string channel) ;
 
   void writeLastValue(char* filename, string channel) ;
 
-  void chooseName(char* original_filename,char* outfilename);
+  void chooseName(const char* original_filename,char* outfilename);
 };
 
 

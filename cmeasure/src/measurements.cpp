@@ -9,7 +9,8 @@ void log(std::string msg) {
 // handler for control C - Windows / Linux
 #ifdef _WIN32
   static BOOL controlC(DWORD signal) {
-    if (signal == CTRL_C_EVENT) {      
+    log("RECEIVED SIGNAL = " + std::to_string(signal));
+    if (signal == CTRL_C_EVENT || signal == 1) {      
       crtl_c_pressed = true;
       return TRUE;
     }
@@ -155,8 +156,10 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
     this->timeout_s = timeout_s;
     this->numberChannels = 0;
     this->partial_sum = 0.0;
+    log("Reseting device");
     DAQmxErrChk(DAQmxBaseResetDevice(deviceName.c_str()));
-    DAQmxErrChk(DAQmxBaseCreateTask("",&taskHandle));
+    log("Creating task");
+    //DAQmxErrChk(DAQmxBaseCreateTask("",&taskHandle));
 
   }
 
@@ -194,7 +197,7 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
 
 
   // measure all points
-  char* Measurement::acquireMeasurements(char* filename, int numer_of_measures){
+  char* Measurement::acquireMeasurements(const char* filename, int numer_of_measures){
     DAQmxBaseResetDevice("Dev1");
     char out[MAX_FILE_NAME_SIZE];
 
@@ -293,7 +296,7 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
   }
 
 
-  void Measurement::startMeasure(int measurement_type ,  long numberOfSamples,  int result_view_mode, char* output_file_name, std::string channel)
+  void Measurement::startMeasure(int measurement_type ,  long numberOfSamples,  int result_view_mode, const char* output_file_name, std::string channel)
   {
     // Handling control C interrupts. 
     // Finish properly and report energy spent
@@ -324,7 +327,7 @@ Channel::Channel(string chName, string chId, float64 maxVoltage) : samples(CHANN
 
 
 
-  void Measurement::chooseName(char* original_filename,char* outfilename)
+  void Measurement::chooseName(const char* original_filename,char* outfilename)
   {
     FILE* in;
     char curr_filename[MAX_FILE_NAME_SIZE];
