@@ -1,3 +1,9 @@
+Project Moved to: [https://github.com/lac-dcc/CMeasure](https://github.com/lac-dcc/CMeasure)
+
+<br/>
+<br/>
+<br/>
+
 # CMeasure
 
 CMeasure is C++ tool designed to interact and collect data produced by the
